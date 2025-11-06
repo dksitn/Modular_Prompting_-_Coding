@@ -1,177 +1,255 @@
-# 💻 程式碼方法論 (Code Engineering Methodology)
+# 《程式碼方法論》
+*(Code Engineering Methodology – Modular, Layered, Testable)*
+
+## 一、導論：從程式到系統
+
+傳統的程式開發常以「單一應用」為出發點。
+當功能增長、版本增加、團隊擴大時，就會面臨三大問題：
+
+* **難以維護**：重複邏輯散落在多個檔案中。
+* **難以重用**：功能無法跨專案引用。
+* **難以測試**：程式邏輯與環境強耦合，缺乏可抽換性。
+
+**程式碼方法論（Code Engineering Methodology）** 提出一種系統化結構：
+
+> 把程式碼視為「可重組的模組」，
+> 以「分層、解耦、測試」為核心原則，
+> 讓每一行程式碼都有其邏輯位置與生命週期。
 
 ---
 
-## 一、導論：從指令到結構
+## 二、核心原則（The Core Principles）
 
-傳統程式開發若缺乏架構思維，容易演變為「功能堆疊」的巨石式程式碼。這樣的系統難以維護、測試與擴充。
-
-**模組化程式碼方法論**的核心思想是：
-
-> 將程式視為邏輯模組的組合，使其具備結構清晰、可重用、可測試的工程特性。
-
----
-
-## 二、方法論核心：八項原則
-
-### 📘 三、原則對應摘要表（方法論總覽）
-
-| 原則編號 | 名稱             | 關鍵理念             | 實踐焦點           | 關聯角色  |
-| ---- | -------------- | ---------------- | -------------- | ----- |
-| 1    | 程式即邏輯資產 (CaA)  | 程式具版本與測試性        | 使用 Git 管理      | 全員    |
-| 2    | 模組化與單一職責 (SRP) | 一個模組只做一件事        | 拆分功能模組         | 開發者   |
-| 3    | 關注點分離 (SoC)    | 資料、邏輯、展示分離       | 明確目錄架構         | 全員    |
-| 4    | 組合優於繼承         | 函式與服務組合          | JSON / DI 管理依賴 | 架構師   |
-| 5    | DRY 原則         | 功能不重複定義          | 建立共用模組         | 開發者   |
-| 6    | 宣告式依賴管理        | 宣告「依賴關係」而非「手動整合」 | 使用配置或容器        | 架構師   |
-| 7    | Context 介面     | 模組透過上下文溝通        | 維護共享狀態結構       | 系統工程師 |
-| 8    | 可測試性           | 支援單元與整合測試        | 建立測試框架         | 全員    |
+| 原則 | 名稱                            | 核心理念            | 實踐方式                                    |
+| -- | ----------------------------- | --------------- | --------------------------------------- |
+| P1 | 程式碼即邏輯單元                      | 程式碼不是執行體，而是邏輯模組 | 以功能模組形式儲存、版本化                           |
+| P2 | 單一職責原則 (SRP)                  | 每個模組只負責一件事      | 拆分檔案至 `domain/`, `service/`, `adapter/` |
+| P3 | 關注點分離 (SoC)                   | 資料、邏輯、界面分層      | 使用清楚的目錄層級                               |
+| P4 | 組合優於繼承                        | 功能透過組裝而非繼承延伸    | 實作 dependency injection                 |
+| P5 | DRY 原則                        | 不重複邏輯           | 抽取通用函式、封裝工具                             |
+| P6 | 宣告式建構                         | 明確定義依賴關係        | 在組裝層 (`app/`) 宣告依賴模組                    |
+| P7 | SSOT (Single Source of Truth) | 系統中資訊僅存在唯一來源    | 使用統一 config/schema                      |
+| P8 | 可測試性                          | 一切模組皆可單獨驗證      | 單元測試 + 模擬測試 + 整合測試                      |
 
 ---
 
-## 三、原則細節說明
+## 三、程式層級架構設計
 
-### 原則一：程式即邏輯資產 (Code as Architecture - CaA)
+### 📦 目錄結構（範例）
 
-**操作目標：**
-讓所有程式模組具備版本管理、可測試、可追溯特性。
-
-**操作規範：**
-
-1. 程式碼需納入 Git 版本控制。
-2. 重大變更需撰寫明確 Commit message。
-3. 禁止以未版本化的臨時檔案作為正式版本。
-
----
-
-### 原則二：模組化與單一職責 (Modularity & SRP)
-
-**操作目標：**
-每個函式或類別模組只負責一項明確功能。
-
-**操作規範：**
-
-1. 函式命名應清楚表達目的，如 `parse_json()`、`analyze_text()`。
-2. 一個模組不得同時處理資料與展示邏輯。
-3. 超過 200 行的模組需進行拆分。
-
----
-
-### 原則三：關注點分離 (Separation of Concerns - SoC)
-
-**操作目標：**
-讓資料流、邏輯流與展示流彼此分離。
-
-**操作規範：**
-
-1. 目錄結構必須遵循以下格式：
-
-```text
-src/            → 程式核心邏輯
-services/       → 商業邏輯或服務層
-api/            → 輸入輸出介面層
-config/         → 系統設定與宣告
-scripts/        → 工具與自動化腳本
+```
+core/
+ └─ code/
+     ├─ domain/         # 核心業務邏輯（不依賴外部框架）
+     │   ├─ user.py
+     │   └─ report.py
+     ├─ services/       # 邏輯服務層，封裝操作流程
+     │   ├─ report_service.py
+     │   └─ auth_service.py
+     ├─ adapters/       # 外部介面層（API, DB, Prompt, File IO）
+     │   ├─ db_adapter.py
+     │   ├─ api_adapter.py
+     │   └─ prompt_adapter.py
+     ├─ interfaces/     # 對外公開的應用入口（可給 UI, CLI, API 用）
+     │   └─ controller.py
+     ├─ configs/
+     │   ├─ schema.json
+     │   └─ settings.yaml
+     └─ tests/
+         ├─ test_unit/
+         ├─ test_integration/
+         └─ test_e2e/
 ```
 
-2. 禁止在同一檔案中同時處理資料與呈現邏輯。
-3. 確保每層只負責其定義職責。
+這個結構的邏輯是：
+
+* **domain** → 最純邏輯，不依賴外部世界
+* **services** → 管理業務流程（調用多個 domain）
+* **adapters** → 與外部世界互動
+* **interfaces** → 給使用者或其他系統呼叫
+* **configs** → 定義唯一真實狀態 (SSOT)
+* **tests** → 驗證整個系統可用性
 
 ---
 
-### 原則四：組合優於繼承 (Composition over Inheritance)
+## 四、程式模組的設計方法
 
-**操作目標：**
-以組合的方式整合功能，而非建立複雜的繼承鏈。
+### P1：程式碼即邏輯單元
 
-**操作規範：**
+程式碼不只是跑起來的功能，它代表一段「意圖」。
+例如：
 
-1. 優先以「組合物件」實現多功能整合。
-2. 避免多重繼承與深層父類關係。
-3. 使用依賴注入 (DI) 或配置式宣告統一依賴管理。
+```python
+# domain/report.py
+class ReportAnalyzer:
+    """分析報告的業務邏輯，不涉及外部資料來源"""
+    def summarize(self, text: str) -> dict:
+        # 純邏輯
+        ...
+```
 
----
-
-### 原則五：DRY 原則 (Don't Repeat Yourself)
-
-**操作目標：**
-減少重複邏輯與代碼片段，確保功能集中管理。
-
-**操作規範：**
-
-1. 重複程式段應抽象為共用函式。
-2. 共用邏輯統一放置於 `utils/` 或 `core/`。
-3. 禁止複製貼上其他模組邏輯。
+這樣的模組可以被 service 或 adapter 任意調用、測試、替換。
 
 ---
 
-### 原則六：宣告式依賴管理 (Declarative Dependency Management)
+### P2：單一職責原則
 
-**操作目標：**
-讓依賴關係明確可追溯，而非隱性耦合。
+不要讓一個檔案同時：
 
-**操作規範：**
+* 處理資料庫連線
+* 格式化輸出
+* 做業務邏輯
 
-1. 使用 `requirements.txt` 或 `package.json` 管理依賴。
-2. 透過配置檔 (YAML / JSON) 宣告模組間依賴關係。
-3. 禁止在程式中硬編碼外部依賴。
+應該拆成：
+
+```
+adapters/db_adapter.py
+domain/report.py
+services/report_service.py
+```
 
 ---
 
-### 原則七：Context 介面 (Contextual Interfaces)
+### P3：關注點分離
 
-**操作目標：**
-確保模組之間的溝通透過統一的 Context 物件。
+**不要混在一起**。
+邏輯、資料、輸入輸出應清楚分離：
 
-**操作規範：**
+| 層級        | 功能     | 範例                       |
+| --------- | ------ | ------------------------ |
+| domain    | 純邏輯    | 規則、演算法、資料模型              |
+| services  | 管理流程   | 驗證、呼叫 domain、組合結果        |
+| adapters  | 外部系統   | DB / API / Prompt        |
+| interface | 對外 API | FastAPI Controller 或 CLI |
 
-1. 所有模組的資料交換須透過 Context 物件。
-2. Context 結構需以 Schema 定義，例如：
+---
+
+### P4：組合優於繼承
+
+錯誤示範：
+
+```python
+class SpecialReportAnalyzer(ReportAnalyzer):
+    ...
+```
+
+這樣繼承會破壞封裝。
+改成：
+
+```python
+class ReportPipeline:
+    def __init__(self, analyzer: ReportAnalyzer, formatter: ReportFormatter):
+        self.analyzer = analyzer
+        self.formatter = formatter
+```
+
+---
+
+### P5：DRY 原則
+
+相同功能（如日誌、格式化）只存在一份。
+
+```python
+# utils/logger.py
+def log(message: str): ...
+```
+
+任何地方需要記錄，都引入 `logger`，而不是重寫。
+
+---
+
+### P6：宣告式建構
+
+應用層只**宣告**需要哪些模組，而不描述怎麼做。
+
+```python
+# app.py
+from services.report_service import ReportService
+from adapters.db_adapter import Database
+from adapters.prompt_adapter import PromptConnector
+
+def build_app():
+    db = Database()
+    prompt = PromptConnector()
+    return ReportService(db, prompt)
+```
+
+---
+
+### P7：SSOT
+
+例如設定檔、資料結構統一：
 
 ```json
 {
-  "user": {"id": "", "role": ""},
-  "session": {"input": "", "output": ""},
-  "state": {"logs": []}
+  "project_spec": {
+    "intent": "string",
+    "summary": "string",
+    "report": "object"
+  }
 }
 ```
 
-3. 模組僅能修改授權欄位。
+所有模組都讀取這個 schema，而非各自定義。
 
 ---
 
-### 原則八：可測試性 (Testability)
+### P8：可測試性
 
-**操作目標：**
-確保每個模組可被單元測試與整合測試覆蓋。
+每個層級都能獨立測試：
 
-**操作規範：**
+```python
+# tests/test_report.py
+from domain.report import ReportAnalyzer
 
-1. 每個功能需對應至少一個 `test_*.py` 測試檔案。
-2. 單元測試聚焦於函式行為；整合測試模擬實際流程。
-3. 若測試失敗，錯誤應指向具體模組。
-
----
-
-## 四、三層架構導入：從函式到應用系統
-
-在模組化方法論基礎上，建立對應於軟體工程的三層邏輯結構：
-
-| 層級                  | 名稱           | 說明                |
-| ------------------- | ------------ | ----------------- | 
-| 🧩 Function（功能函式）   | 單一功能邏輯單元     | Function          |
-| 💎 Module（功能模組）     | 整合多個函式的可重用單元 | Library / Package |
-| 🚀 Application（應用層） | 組合多模組形成可執行系統 | Application       |
-
-**邏輯：**
-
-> Function 定義「功能」、Module 組合「邏輯」、Application 執行「系統」。
+def test_summary_generation():
+    analyzer = ReportAnalyzer()
+    result = analyzer.summarize("AI transforms industry.")
+    assert "AI" in result["keywords"]
+```
 
 ---
 
-## 五、結語
+## 五、VSCode + GitHub 實作流程
 
-透過八項原則與三層結構，程式開發不再是片段代碼的堆疊，而是一個有邏輯、有秩序、可維護的系統設計過程。
+| 階段   | 動作                             | 工具                   |
+| ---- | ------------------------------ | -------------------- |
+| 編輯   | 撰寫 domain/service/adapters     | VSCode               |
+| 組裝   | `python -m app` 或 `make build` | Terminal             |
+| 測試   | `pytest`                       | VSCode Testing Panel |
+| 版本管理 | `git commit` / `git push`      | GitHub               |
+| 驗證   | CI 驗證測試 + coverage             | GitHub Actions       |
+| 發佈   | 發 tag + release                | 自動部署                 |
 
-> **程式碼不只是指令，而是邏輯資產。**
-> 每一段程式，都應是可重組、可驗證、可演化的邏輯單元。
+---
+
+## 六、資料夾與組織關係（概念圖）
+
+```mermaid
+graph TD
+    D[domain] --> S[services]
+    S --> A[adapters]
+    A --> I[interfaces]
+    C[configs] --> S
+    T[tests] --> D
+    T --> S
+    T --> A
+```
+
+---
+
+## 七、結語：帶來的價值
+
+| 面向   | 成果                            |
+| ---- | ----------------------------- |
+| 可維護性 | 清楚分層，修改影響範圍明確                 |
+| 可重用性 | 功能模組可跨專案共用                    |
+| 可測試性 | 單元、整合測試結構固定                   |
+| 可版本化 | 程式模組可版本標註與回溯                  |
+| 可擴展性 | 任意新增 adapter / service，不破壞原結構 |
+
+> **總結：**
+>
+> 程式碼不再是雜亂的命令集合，而是有邏輯、有層次、有版本的知識體系。
+> 這正是「程式碼即邏輯模組」的真正精神。
+
